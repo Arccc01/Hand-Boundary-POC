@@ -1,89 +1,68 @@
 # Hand–Boundary Interaction POC  
-Arvyax Internship Assignment
 
-Author: Anuj Sharma  
-Tech Stack: Python, OpenCV, NumPy  
-Execution: CPU-only (No MediaPipe / No Pose APIs)
+## 🚀 Overview
 
----
-
-## 1. Overview
-
-This project is a real-time prototype that tracks a user’s hand from a webcam feed and detects when the hand approaches a virtual object (boundary) on the screen.
+This project is a real-time computer vision prototype that tracks a user’s hand using a webcam and detects its interaction with a virtual object (boundary) drawn on the screen.
 
 The system dynamically classifies the interaction into three states:
 
-- SAFE – hand is far from the boundary  
-- WARNING – hand is approaching the boundary  
-- DANGER – hand is extremely close / touching the boundary  
+- **SAFE** – hand is far from the virtual boundary  
+- **WARNING** – hand is approaching the boundary  
+- **DANGER** – hand is extremely close / touching the boundary  
 
-When the DANGER state is triggered, a large on-screen warning **“DANGER DANGER”** is displayed.
+During the DANGER state, a large on-screen alert **“DANGER DANGER”** is displayed with a red flashing overlay.
 
-All processing is done using **classical computer vision techniques only**, without using MediaPipe, OpenPose, or any cloud-based AI APIs.
+All tracking and logic are implemented using **classical computer vision techniques only**, without MediaPipe, OpenPose, or any cloud-based AI APIs.
 
 ---
 
-## 2. Features
+## ✨ Key Features
 
-- Real-time webcam capture using a **threaded frame reader** for better FPS.
+- Real-time webcam processing with **threaded frame capture** for smoother FPS.
 - **Skin-based hand detection** using HSV color segmentation.
 - **Face suppression** using Haar Cascade so that head movement does not affect detection.
-- **Region of Interest (ROI)** around the virtual boundary to reduce noise.
-- **Convex hull–based hand interaction point** for accurate location of the hand closest to the boundary.
-- **Distance-based state logic** (SAFE / WARNING / DANGER).
-- **Hysteresis and EMA smoothing** to avoid flickering and jitter.
-- Red flashing overlay and large **“DANGER DANGER”** warning in DANGER state.
+- **Region of Interest (ROI)** around the virtual boundary for noise reduction.
+- **Convex hull–based hand interaction point** for higher positional accuracy.
+- **Distance-based state logic**: SAFE → WARNING → DANGER.
+- **EMA smoothing + hysteresis** to avoid flickering.
+- Red flashing overlay and large **“DANGER DANGER”** text in DANGER state.
+- FPS, distance, and state displayed in real time.
 - Debug mask window for visual verification.
-- Runs in real time on CPU (≥ 8 FPS).
+- Runs fully on **CPU in real time (≥ 8 FPS)**.
 
 ---
 
-## 3. How It Works (Methodology)
+## 🧠 Methodology (How It Works)
 
-1. **Camera Input**
-   - Frames are captured from the webcam using OpenCV with a threaded capture class.
+1. **Camera Input**  
+   Webcam frames are captured using OpenCV with a threaded capture class.
 
-2. **Preprocessing**
-   - The frame is resized for faster processing.
-   - A virtual rectangle (boundary) is drawn on the screen.
+2. **Preprocessing**  
+   Frames are resized for faster processing. A virtual rectangle (boundary) is drawn.
 
-3. **Hand Segmentation**
-   - The frame is converted to HSV color space.
-   - Skin color is segmented using fixed HSV thresholds.
-   - Morphological operations (open, close) and blurring remove noise.
+3. **Hand Segmentation**  
+   Skin pixels are extracted using HSV color thresholding and cleaned using morphological operations.
 
-4. **Face Filtering**
-   - A Haar cascade face detector finds the face.
-   - The detected face area is masked out from the skin mask to prevent false detection.
+4. **Face Filtering**  
+   A Haar cascade detects the face. The detected face region is masked out from the skin mask to avoid false triggers.
 
-5. **Motion Filtering (Optional)**
-   - Background subtraction (MOG2) can be combined with the skin mask.
+5. **ROI-Based Detection**  
+   Detection is limited to a region around the boundary to improve robustness and speed.
 
-6. **Contour Detection**
-   - The largest valid contour near the virtual boundary is assumed to be the hand.
-   - Small or invalid contours are rejected using area and solidity checks.
+6. **Hand Contour & Convex Hull**  
+   The largest valid contour is selected as the hand.  
+   The convex hull is computed and the **hull point closest to the virtual rectangle** is used as the interaction point.
 
-7. **Accurate Hand Location**
-   - The convex hull of the hand contour is computed.
-   - The hull point closest to the virtual rectangle is selected as the interaction point.
-   - This gives better accuracy than using only the hand centroid.
+7. **Distance Measurement & States**  
+   The Euclidean distance from the interaction point to the rectangle is computed and mapped to:
+   - SAFE
+   - WARNING
+   - DANGER  
+   Hysteresis prevents rapid flickering.
 
-8. **Distance & State Classification**
-   - The distance from the interaction point to the rectangle is measured.
-   - Based on distance thresholds:
-     - SAFE → WARNING → DANGER states are assigned.
-   - Hysteresis prevents rapid state flickering.
+8. **Visualization**  
+   Rectangle color changes with state. A dot shows the interaction point.  
+   In DANGER, a flashing red overlay and large warning text are shown.
 
-9. **Visual Output**
-   - Rectangle color changes with state.
-   - The hand interaction point is marked with a dot.
-   - State, distance, and FPS are shown.
-   - In DANGER state, a red flashing overlay and “DANGER DANGER” text are shown.
+---
 
-
-## 4. Installation & Execution
-
-### Step 1: Install Dependencies
-
-```bash
-pip install -r requirements.txt
